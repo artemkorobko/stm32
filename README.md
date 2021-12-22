@@ -1,7 +1,8 @@
 # STM32 Examples
 This repository contains scaffolding examples for STM32 MCU.
 
-[stm32f103](stm32f103) - Basic peripheral setup
+[stm32f103](stm32f103) - Basic MCU setup  
+[stm32f103-USB-CDC-ACM](stm32f103-USB-CDC-ACM) - USB CDC ACM device implementation
 
 # Prerequisites
 ## Rust
