@@ -2,7 +2,7 @@
 #![no_std]
 
 use panic_halt as _;
-use stm32f1xx_hal::{gpio, prelude::*, usb};
+use stm32f1xx_hal::{flash, gpio, prelude::*, usb};
 
 use crate::{
     drivers::cdc_acm,
@@ -10,13 +10,17 @@ use crate::{
 };
 
 mod device_id;
+mod dfu;
 mod drivers;
 mod protocols;
+
+pub const FLASH_SIZE: flash::FlashSize = flash::FlashSize::Sz64K;
 
 #[rtic::app(device = stm32f1xx_hal::pac, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
 const APP: () = {
     struct Resources {
         usb: cdc_acm::Device,
+        flash: flash::Parts,
     }
 
     #[init]
@@ -27,7 +31,7 @@ const APP: () = {
 
         // Configure peripherals
         let pac = cx.device;
-        let mut flash = pac.FLASH.constrain();
+        let mut flash: flash::Parts = pac.FLASH.constrain();
         let mut rcc = pac.RCC.constrain();
         let mut afio = pac.AFIO.constrain(&mut rcc.apb2);
         let clocks = rcc
@@ -64,7 +68,7 @@ const APP: () = {
         };
         let usb = cdc_acm::Device::new(usb_peripheral, usb_descriptor);
 
-        init::LateResources { usb }
+        init::LateResources { usb, flash }
     }
 
     #[idle]
@@ -74,9 +78,10 @@ const APP: () = {
         }
     }
 
-    #[task(resources = [usb])]
+    #[task(resources = [usb, flash])]
     fn handle_usb_inbound(cx: handle_usb_inbound::Context, inbound: Inbound) {
         let mut usb = cx.resources.usb;
+        let flash = cx.resources.flash;
         match inbound {
             Inbound::Version => {
                 let major = env!("CARGO_PKG_VERSION_MAJOR").parse::<u8>().unwrap_or(0);
@@ -95,10 +100,31 @@ const APP: () = {
                 });
             }
             Inbound::Mode => {
-                let outbound = Outbound::Mode(2);
+                let outbound = Outbound::ModeDfu;
                 usb.lock(|device| {
                     device.write_outbound(outbound).ok();
-                })
+                });
+            }
+            Inbound::ReadDfuFlags => {
+                let mut writer = flash.writer(flash::SectorSize::Sz1K, FLASH_SIZE);
+                let outbound = match dfu::Flags::read(&mut writer) {
+                    Ok(flags) => Outbound::DfuFlags(flags),
+                    Err(_) => Outbound::DfuFlagsError,
+                };
+                usb.lock(|device| {
+                    device.write_outbound(outbound).ok();
+                });
+            }
+            Inbound::ResetDfuFlags => {
+                let mut writer = flash.writer(flash::SectorSize::Sz1K, FLASH_SIZE);
+                let outbound = dfu::Flags::new()
+                    .write(&mut writer)
+                    .map(|_| Outbound::ResetDfuFlagsOk)
+                    .unwrap_or(Outbound::ResetDfuFlagsErr);
+
+                usb.lock(|device| {
+                    device.write_outbound(outbound).ok();
+                });
             }
             Inbound::Unknown => {}
         }

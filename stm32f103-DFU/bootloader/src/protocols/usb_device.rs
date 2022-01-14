@@ -1,11 +1,13 @@
 use usb_device::UsbError;
 
-use crate::drivers::cdc_acm::Device;
+use crate::{dfu, drivers::cdc_acm::Device};
 
 pub enum Inbound {
     Version,
     DeviceId,
     Mode,
+    ReadDfuFlags,
+    ResetDfuFlags,
     Unknown,
 }
 
@@ -22,6 +24,8 @@ impl Reader for Device {
             0 => Inbound::Version,
             1 => Inbound::DeviceId,
             2 => Inbound::Mode,
+            3 => Inbound::ReadDfuFlags,
+            4 => Inbound::ResetDfuFlags,
             _ => Inbound::Unknown,
         };
         Ok(inbound)
@@ -40,7 +44,11 @@ impl Reader for Device {
 pub enum Outbound {
     Version(u8, u8, u8),
     DeviceId(u16, u16, u32, u32),
-    Mode(u8),
+    ModeDfu,
+    DfuFlags(&'static dfu::Flags),
+    DfuFlagsError,
+    ResetDfuFlagsOk,
+    ResetDfuFlagsErr,
 }
 
 pub trait Writer {
@@ -72,8 +80,31 @@ impl Writer for Device {
                 ];
                 self.write_all(&buf)
             }
-            Outbound::Mode(mode) => {
-                let buf = [2, mode];
+            Outbound::ModeDfu => {
+                let buf = [2, 200];
+                self.write_all(&buf)
+            }
+            Outbound::DfuFlags(flags) => {
+                let buf = [
+                    3,
+                    0,
+                    flags.flash_count as u8,
+                    (flags.flash_count >> 8) as u8,
+                    (flags.flash_count >> 16) as u8,
+                    (flags.flash_count >> 24) as u8,
+                ];
+                self.write_all(&buf)
+            }
+            Outbound::DfuFlagsError => {
+                let buf = [3, 1];
+                self.write_all(&buf)
+            }
+            Outbound::ResetDfuFlagsOk => {
+                let buf = [4, 0];
+                self.write_all(&buf)
+            }
+            Outbound::ResetDfuFlagsErr => {
+                let buf = [4, 1];
                 self.write_all(&buf)
             }
         }

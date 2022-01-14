@@ -33,6 +33,7 @@ impl Device {
             .product(descriptor.product)
             .serial_number(descriptor.serial_number)
             .device_class(USB_CLASS_CDC)
+            .max_packet_size_0(64)
             .build();
 
         Self { device, serial }
