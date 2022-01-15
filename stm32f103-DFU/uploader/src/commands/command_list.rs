@@ -2,11 +2,11 @@ use crate::driver::{device::Device, device_detector::DefaultDeviceDetector, driv
 
 use super::command_executor::CommandExecutor;
 
-pub struct CommandExecutorList {
+pub struct CommandList {
     driver: Driver,
 }
 
-impl CommandExecutorList {
+impl CommandList {
     pub fn new(driver: Driver) -> Self {
         Self { driver }
     }
@@ -22,19 +22,15 @@ impl CommandExecutorList {
     fn print_devices(&self, devices: Vec<Device>) {
         for device in devices {
             let meta = device.metadata();
-            log::info!(
-                "[{}] {} - [{}] {} : {}",
-                meta.vid,
-                meta.vendor,
-                meta.pid,
-                meta.product,
-                meta.serial,
-            );
+            log::info!("> {} - {}", meta.vendor, meta.product);
+            log::info!("VID: {}", meta.vid);
+            log::info!("PID: {}", meta.pid);
+            log::info!("Serial: {}", meta.serial);
         }
     }
 }
 
-impl CommandExecutor for CommandExecutorList {
+impl CommandExecutor for CommandList {
     fn exec(&self) -> anyhow::Result<()> {
         let devices = self.list_devices()?;
         if devices.is_empty() {
