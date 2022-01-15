@@ -1,5 +1,5 @@
 [package]
-name = "stm32f103-usb-cdc-acm"
+name = "bootloader"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,7 +12,7 @@ cortex-m-rtic = { version = "0.5.9", default-features = false, features = ["cort
 stm32f1xx-hal = { version = "0.7.0", features = ["rt", "stm32f103", "stm32-usbd", "medium"] }
 
 [[bin]]
-name = "stm32f103-usb-cdc-acm"
+name = "bootloader"
 test = false
 bench = false
 

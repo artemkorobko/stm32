@@ -1,6 +1,6 @@
 # USB CDC ACM device implementation
 
-This is the implementation of USB CDC ACM device for STM32F103 MCU.
+This is the implementation of USB CDC ACM DFU boot loader device for STM32F103 MCU.
 
 # Protocol
 ## Inbound version
@@ -26,3 +26,9 @@ Response with device id information from MCU. Below is the example representatio
 | Opcode | ID_0 | ID_1 | ID_2 | ID_3 |
 | --- | --- | --- | --- |  -- |
 | 0x01 | 0x3B1A | 0x0701 | 0x32124353 | 0x354B4E00 |
+
+## Program device
+```
+cargo build --release && \
+openocd -f ../../openocd.cfg -c "init" -c "reset init" -c "flash write_image erase ./target/thumbv7m-none-eabi/release/bootloader" -c "reset run" -c "exit"
+```
