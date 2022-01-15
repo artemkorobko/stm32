@@ -62,4 +62,16 @@ impl Driver {
         }
         Ok(devs)
     }
+
+    pub fn open_device(
+        &self,
+        detector: &Box<dyn DeviceDetector>,
+        serial: &str,
+    ) -> anyhow::Result<Option<Device>> {
+        let device = self
+            .list_devices(detector)?
+            .into_iter()
+            .find(|device| device.metadata().serial == serial);
+        Ok(device)
+    }
 }
