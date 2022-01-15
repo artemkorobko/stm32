@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 pub struct Metadata {
     pub vid: u16,
     pub pid: u16,
@@ -27,5 +29,11 @@ impl Device {
 
     pub fn metadata(&self) -> &Metadata {
         &self.meta
+    }
+
+    pub fn reset(&mut self) -> anyhow::Result<()> {
+        self.handle
+            .reset()
+            .with_context(|| format!("Unable to reset device {}", self.metadata().serial))
     }
 }
