@@ -29,7 +29,7 @@ impl DeviceDetector for DefaultDeviceDetector {
     }
 
     fn validate_vendor(&self, vendor: &str) -> bool {
-        vendor == "ST Microelectronics"
+        vendor == "STMicroelectronics"
     }
 
     fn validate_product(&self, product: &str) -> bool {
