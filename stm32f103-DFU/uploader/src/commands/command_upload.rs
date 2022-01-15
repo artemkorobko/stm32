@@ -2,13 +2,13 @@ use crate::driver::driver::Driver;
 
 use super::command_executor::CommandExecutor;
 
-pub struct CommandExecutorUpload {
+pub struct CommandUpload {
     driver: Driver,
     source: String,
     target: String,
 }
 
-impl CommandExecutorUpload {
+impl CommandUpload {
     pub fn new(driver: Driver, source: String, target: String) -> Self {
         Self {
             driver,
@@ -22,7 +22,7 @@ impl CommandExecutorUpload {
     }
 }
 
-impl CommandExecutor for CommandExecutorUpload {
+impl CommandExecutor for CommandUpload {
     fn exec(&self) -> anyhow::Result<()> {
         Ok(())
     }
