@@ -1,6 +1,6 @@
 use commands::{
-    command_executor::CommandExecutor, command_list::CommandExecutorList,
-    command_upload::CommandExecutorUpload, command_version::CommandExecutorVersion,
+    command_executor::CommandExecutor, command_flags::CommandFlags, command_fv::CommandFv,
+    command_list::CommandList, command_upload::CommandUpload, command_version::CommandVersion,
     config::Command,
 };
 use structopt::StructOpt;
@@ -23,10 +23,12 @@ fn init_log_system() {
 
 fn create_command_executor(command: Command) -> anyhow::Result<Box<dyn CommandExecutor>> {
     let executor: Box<dyn CommandExecutor> = match command {
-        Command::Version => CommandExecutorVersion::boxed(),
-        Command::Ls => CommandExecutorList::new(Driver::new()?).boxed(),
+        Command::Version => CommandVersion::boxed(),
+        Command::Ls => CommandList::new(Driver::new()?).boxed(),
+        Command::Fv { serial } => CommandFv::new(Driver::new()?, serial).boxed(),
+        Command::Flags => CommandFlags::new(Driver::new()?).boxed(),
         Command::Upload { source, target } => {
-            CommandExecutorUpload::new(Driver::new()?, source, target).boxed()
+            CommandUpload::new(Driver::new()?, source, target).boxed()
         }
     };
     Ok(executor)

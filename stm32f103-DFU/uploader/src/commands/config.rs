@@ -7,6 +7,13 @@ pub enum Command {
     Version,
     /// List connected devices
     Ls,
+    /// Print firmware version
+    Fv {
+        /// Serial number
+        serial: String
+    },
+    /// Print DFU flags
+    Flags,
     /// Upload firmware
     Upload {
         /// Firmware to upload path
