@@ -1,4 +1,4 @@
-use crate::driver::{device::Device, device_detector::DefaultDeviceDetector, driver::Driver};
+use crate::driver::driver::Driver;
 
 use super::command_executor::CommandExecutor;
 
@@ -16,24 +16,24 @@ impl CommandFv {
         Box::new(self)
     }
 
-    fn read_firmware_version(&self, device: Device) -> anyhow::Result<(u8, u8, u8)> {
-        let device = device.open()?;
-        Ok((0, 0, 0))
-    }
+    // fn read_firmware_version(&self, device: Device) -> anyhow::Result<(u8, u8, u8)> {
+    //     let device = device.open()?;
+    //     Ok((0, 0, 0))
+    // }
 }
 
 impl CommandExecutor for CommandFv {
     fn exec(&self) -> anyhow::Result<()> {
-        let device = self
-            .driver
-            .open_device(&DefaultDeviceDetector::boxed(), &self.serial)?;
-        match device {
-            Some(device) => {
-                let (major, minor, patch) = self.read_firmware_version(device)?;
-                log::info!("Firmware version: {}.{}.{}", major, minor, patch);
-            }
-            None => log::error!("No device found matching serial {}", self.serial),
-        }
+        // let device = self
+        //     .driver
+        //     .open_device(&DefaultDeviceDetector::boxed(), &self.serial)?;
+        // match device {
+        //     Some(device) => {
+        //         let (major, minor, patch) = self.read_firmware_version(device)?;
+        //         log::info!("Firmware version: {}.{}.{}", major, minor, patch);
+        //     }
+        //     None => log::error!("No device found matching serial {}", self.serial),
+        // }
         Ok(())
     }
 }

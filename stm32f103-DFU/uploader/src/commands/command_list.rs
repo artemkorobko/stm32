@@ -1,4 +1,10 @@
-use crate::driver::{device::Device, device_detector::DefaultDeviceDetector, driver::Driver};
+use crate::driver::{
+    device::{
+        generic::Identification,
+        identifier::{DefaultDeviceIdentifier, DefaultProductIdentifier},
+    },
+    driver::Driver,
+};
 
 use super::command_executor::CommandExecutor;
 
@@ -14,30 +20,27 @@ impl CommandList {
     pub fn boxed(self) -> Box<dyn CommandExecutor> {
         Box::new(self)
     }
-
-    fn list_devices(&self) -> anyhow::Result<Vec<Device>> {
-        self.driver.list_devices(&DefaultDeviceDetector::boxed())
-    }
-
-    fn print_devices(&self, devices: Vec<Device>) {
-        for device in devices {
-            let meta = device.metadata();
-            log::info!("> {} - {}", meta.vendor, meta.product);
-            log::info!("VID: {}", meta.vid);
-            log::info!("PID: {}", meta.pid);
-            log::info!("Serial: {}", meta.serial);
-        }
-    }
 }
 
 impl CommandExecutor for CommandList {
     fn exec(&self) -> anyhow::Result<()> {
-        let devices = self.list_devices()?;
-        if devices.is_empty() {
-            log::info!("No connected devices found");
+        let i_device = DefaultDeviceIdentifier {};
+        let i_product = DefaultProductIdentifier {};
+        let mut devices = 0;
+        for device in self.driver.devices()?.iter() {
+            if let Identification::Identified(device) = device.identify(&i_device, &i_product)? {
+                log::info!("----------");
+                log::info!("Vendor/ID: {}/{}", device.vendor(), device.vendor_id());
+                log::info!("Product/ID: {}/{}", device.product(), device.product_id());
+                log::info!("Serial: {}", device.serial_number());
+                devices += 1;
+            }
+        }
+
+        if devices > 0 {
+            log::info!("---------- Total devices: {}", devices);
         } else {
-            log::info!("Connected devices");
-            self.print_devices(devices);
+            log::info!("No devices found");
         }
         Ok(())
     }
