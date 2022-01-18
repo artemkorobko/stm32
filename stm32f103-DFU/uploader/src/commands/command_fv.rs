@@ -16,8 +16,8 @@ impl CommandFv {
         Box::new(self)
     }
 
-    fn read_firmware_version(&self, device: &mut Device) -> anyhow::Result<(u8, u8, u8)> {
-        device.reset()?;
+    fn read_firmware_version(&self, device: Device) -> anyhow::Result<(u8, u8, u8)> {
+        let device = device.open()?;
         Ok((0, 0, 0))
     }
 }
@@ -28,8 +28,8 @@ impl CommandExecutor for CommandFv {
             .driver
             .open_device(&DefaultDeviceDetector::boxed(), &self.serial)?;
         match device {
-            Some(mut device) => {
-                let (major, minor, patch) = self.read_firmware_version(&mut device)?;
+            Some(device) => {
+                let (major, minor, patch) = self.read_firmware_version(device)?;
                 log::info!("Firmware version: {}.{}.{}", major, minor, patch);
             }
             None => log::error!("No device found matching serial {}", self.serial),

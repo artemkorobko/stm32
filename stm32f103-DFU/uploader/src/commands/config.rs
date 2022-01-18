@@ -10,7 +10,7 @@ pub enum Command {
     /// Print firmware version
     Fv {
         /// Serial number
-        serial: String
+        serial: String,
     },
     /// Print DFU flags
     Flags,

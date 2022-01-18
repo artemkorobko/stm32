@@ -35,20 +35,21 @@ impl Driver {
     }
 
     pub fn list_devices(&self, detector: &Box<dyn DeviceDetector>) -> anyhow::Result<Vec<Device>> {
-        let mut devs = Vec::new();
-        let usb_devs = self.ctx.devices().context("Unable to list USB devices")?;
-        for usb_dev in usb_devs.iter() {
-            let descr = device_helper::read_descriptor(&usb_dev)?;
-            let vid = descr.vendor_id();
-            let pid = descr.product_id();
+        let mut devices = Vec::new();
+        let usb_devices = self.ctx.devices().context("Unable to list USB devices")?;
+        for usb_device in usb_devices.iter() {
+            let descriptor = device_helper::read_descriptor(&usb_device)?;
+            let vid = descriptor.vendor_id();
+            let pid = descriptor.product_id();
             if detector.validate_ids(vid, pid) {
-                let handle = device_helper::open(&usb_dev)?;
                 let timeout = time::Duration::from_secs(1);
-                let lang = device_helper::first_language(&handle, timeout)?;
-                let vendor = device_helper::vendor(&handle, &descr, lang, timeout)?;
-                let product = device_helper::product(&handle, &descr, lang, timeout)?;
+                let handle = device_helper::open(&usb_device)?;
+                let language = device_helper::first_language(&handle, timeout)?;
+                let vendor = device_helper::vendor(&handle, &descriptor, language, timeout)?;
+                let product = device_helper::product(&handle, &descriptor, language, timeout)?;
                 if detector.validate_metadata(&vendor, &product) {
-                    let serial = device_helper::serial_number(&handle, &descr, lang, timeout)?;
+                    let serial =
+                        device_helper::serial_number(&handle, &descriptor, language, timeout)?;
                     let meta = Metadata {
                         vid,
                         pid,
@@ -56,11 +57,11 @@ impl Driver {
                         product,
                         serial,
                     };
-                    devs.push(Device::new(usb_dev, handle, meta));
+                    devices.push(Device::new(usb_device, handle, descriptor, meta));
                 }
             }
         }
-        Ok(devs)
+        Ok(devices)
     }
 
     pub fn open_device(
