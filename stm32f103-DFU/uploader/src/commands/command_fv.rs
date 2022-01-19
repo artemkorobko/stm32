@@ -1,14 +1,4 @@
-use crate::driver::{
-    device::{
-        generic::Identification,
-        identified::IdentifiedDevice,
-        identifier::{
-            DefaultDeviceIdentifier, DefaultProductIdentifier, MultiProductIdentifier,
-            SerialProductIdentifier,
-        },
-    },
-    driver::Driver,
-};
+use crate::driver::prelude::*;
 
 use super::command_executor::CommandExecutor;
 
