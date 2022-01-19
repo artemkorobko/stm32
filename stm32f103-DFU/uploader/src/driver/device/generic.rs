@@ -4,7 +4,7 @@ use anyhow::Context;
 
 use super::{
     identified::IdentifiedDevice,
-    identifier::{DeviceIdentifier, ProductDetector},
+    identifier::{DeviceIdentifier, ProductIdentifier},
 };
 
 pub struct GenericDevice {
@@ -26,7 +26,7 @@ impl GenericDevice {
     pub fn identify(
         self,
         i_device: &impl DeviceIdentifier,
-        i_product: &impl ProductDetector,
+        i_product: &impl ProductIdentifier,
     ) -> anyhow::Result<Identification> {
         let descriptor = Self::read_descriptor(&self.inner)?;
         if Self::is_device_supported(&descriptor, i_device) {
@@ -60,7 +60,7 @@ impl GenericDevice {
     fn is_product_supported(
         vendor: &str,
         product: &str,
-        identifier: &impl ProductDetector,
+        identifier: &impl ProductIdentifier,
     ) -> bool {
         identifier.validate_vendor(vendor) && identifier.validate_product(product)
     }

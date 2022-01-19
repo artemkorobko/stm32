@@ -1,7 +1,7 @@
 use crate::driver::{
     device::{
         generic::Identification,
-        identifier::{DefaultDeviceIdentifier, DefaultProductIdentifier},
+        identifier::{DefaultDeviceIdentifier, DefaultProductIdentifier, MultiProductIdentifier},
     },
     driver::Driver,
 };
@@ -25,22 +25,22 @@ impl CommandList {
 impl CommandExecutor for CommandList {
     fn exec(&self) -> anyhow::Result<()> {
         let i_device = DefaultDeviceIdentifier {};
-        let i_product = DefaultProductIdentifier {};
-        let mut devices = 0;
+        let i_product = MultiProductIdentifier::new(); //from(Box::new(DefaultProductIdentifier {}));
+        let mut devices = 1;
         for device in self.driver.devices()?.iter() {
             if let Identification::Identified(device) = device.identify(&i_device, &i_product)? {
-                log::info!("----------");
-                log::info!("Vendor/ID: {}/{}", device.vendor(), device.vendor_id());
-                log::info!("Product/ID: {}/{}", device.product(), device.product_id());
-                log::info!("Serial: {}", device.serial_number());
+                log::info!("----------------- Device {}", devices);
+                log::info!("Vendor / ID:\t{} / {}", device.vendor(), device.vendor_id());
+                log::info!("Product / ID:\t{} / {}", device.product(), device.product_id());
+                log::info!("Serial:\t\t{}", device.serial_number());
                 devices += 1;
             }
         }
 
         if devices > 0 {
-            log::info!("---------- Total devices: {}", devices);
+            log::info!("----------------- Total devices: {}", devices - 1);
         } else {
-            log::info!("No devices found");
+            log::info!("No attached devices found");
         }
         Ok(())
     }
