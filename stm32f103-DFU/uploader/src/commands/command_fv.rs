@@ -23,7 +23,7 @@ impl CommandFv {
 
     fn find_by_serial(&self, serial: &str) -> anyhow::Result<Option<IdentifiedDevice>> {
         let i_device = DefaultDeviceIdentifier;
-        let mut i_product = MultiProductIdentifier::with_capacity(2);
+        let mut i_product = CompositeProductIdentifier::with_capacity(2);
         i_product.add(Box::new(DefaultProductIdentifier));
         i_product.add(Box::new(SerialProductIdentifier::from(serial)));
         for device in self.driver.devices()?.iter() {
@@ -38,6 +38,7 @@ impl CommandFv {
 impl CommandExecutor for CommandFv {
     fn exec(&self) -> anyhow::Result<()> {
         if let Some(device) = self.find_by_serial(&self.serial)? {
+            let device = device.open()?;
             log::info!("Found USB device with serial {}", self.serial);
         } else {
             log::error!("Can't find USB device with serial {}", self.serial);

@@ -2,8 +2,9 @@ pub use super::device::{
     generic::{GenericDevice, Identification},
     identified::IdentifiedDevice,
     identifier::{
-        DefaultDeviceIdentifier, DefaultProductIdentifier, MultiProductIdentifier,
+        CompositeProductIdentifier, DefaultDeviceIdentifier, DefaultProductIdentifier,
         SerialProductIdentifier,
     },
+    opened::OpenedDevice,
 };
 pub use super::driver::Driver;

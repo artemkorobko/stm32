@@ -88,11 +88,11 @@ impl ProductIdentifier for DefaultProductIdentifier {
     }
 }
 
-pub struct MultiProductIdentifier {
+pub struct CompositeProductIdentifier {
     identifiers: Vec<Box<dyn ProductIdentifier>>,
 }
 
-impl MultiProductIdentifier {
+impl CompositeProductIdentifier {
     pub fn new() -> Self {
         Self::with_capacity(1)
     }
@@ -113,7 +113,7 @@ impl MultiProductIdentifier {
     }
 }
 
-impl ProductIdentifier for MultiProductIdentifier {
+impl ProductIdentifier for CompositeProductIdentifier {
     fn validate_vendor(&self, vendor: &str) -> bool {
         for identifier in self.identifiers.iter() {
             if !identifier.validate_vendor(vendor) {

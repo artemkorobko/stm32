@@ -1,3 +1,5 @@
+use super::opened::OpenedDevice;
+
 pub struct IdentifiedDevice {
     inner: rusb::Device<rusb::Context>,
     descriptor: rusb::DeviceDescriptor,
@@ -44,5 +46,9 @@ impl IdentifiedDevice {
 
     pub fn serial_number(&self) -> &str {
         &self.serial
+    }
+
+    pub fn open(self) -> anyhow::Result<OpenedDevice> {
+        Ok(OpenedDevice::new(self))
     }
 }
