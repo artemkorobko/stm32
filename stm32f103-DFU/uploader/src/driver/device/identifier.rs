@@ -1,5 +1,7 @@
 use core::time;
 
+const DEFAULT_IO_TIMEOUT: time::Duration = time::Duration::from_secs(1);
+
 pub trait DeviceIdentifier {
     fn validate_vid(&self, vid: u16) -> bool;
     fn validate_pid(&self, pid: u16) -> bool;
@@ -8,6 +10,7 @@ pub trait DeviceIdentifier {
 pub trait ProductIdentifier {
     fn validate_vendor(&self, vendor: &str) -> bool;
     fn validate_product(&self, product: &str) -> bool;
+    fn validate_serial(&self, serial: &str) -> bool;
     fn timeout(&self) -> time::Duration;
 }
 
@@ -23,6 +26,48 @@ impl DeviceIdentifier for DefaultDeviceIdentifier {
     }
 }
 
+pub struct AnyDeviceIdentifier;
+
+impl DeviceIdentifier for AnyDeviceIdentifier {
+    fn validate_vid(&self, _: u16) -> bool {
+        true
+    }
+
+    fn validate_pid(&self, _: u16) -> bool {
+        true
+    }
+}
+
+pub struct SerialProductIdentifier {
+    serial: String,
+}
+
+impl From<&str> for SerialProductIdentifier {
+    fn from(serial: &str) -> Self {
+        Self {
+            serial: String::from(serial),
+        }
+    }
+}
+
+impl ProductIdentifier for SerialProductIdentifier {
+    fn validate_vendor(&self, _: &str) -> bool {
+        true
+    }
+
+    fn validate_product(&self, _: &str) -> bool {
+        true
+    }
+
+    fn validate_serial(&self, serial: &str) -> bool {
+        self.serial == serial
+    }
+
+    fn timeout(&self) -> time::Duration {
+        DEFAULT_IO_TIMEOUT
+    }
+}
+
 pub struct DefaultProductIdentifier;
 
 impl ProductIdentifier for DefaultProductIdentifier {
@@ -34,8 +79,12 @@ impl ProductIdentifier for DefaultProductIdentifier {
         product == "STM32 Virtual ComPort"
     }
 
+    fn validate_serial(&self, _: &str) -> bool {
+        true
+    }
+
     fn timeout(&self) -> time::Duration {
-        time::Duration::from_secs(1)
+        DEFAULT_IO_TIMEOUT
     }
 }
 
@@ -53,16 +102,14 @@ impl MultiProductIdentifier {
         Self { identifiers }
     }
 
-    pub fn add(&mut self, identifier: Box<dyn ProductIdentifier>) {
-        self.identifiers.push(identifier)
-    }
-}
-
-impl From<Box<dyn ProductIdentifier>> for MultiProductIdentifier {
-    fn from(identifier: Box<dyn ProductIdentifier>) -> Self {
+    pub fn from(identifier: Box<dyn ProductIdentifier>) -> Self {
         let mut instance = Self::new();
         instance.add(identifier);
         instance
+    }
+
+    pub fn add(&mut self, identifier: Box<dyn ProductIdentifier>) {
+        self.identifiers.push(identifier)
     }
 }
 
@@ -80,6 +127,16 @@ impl ProductIdentifier for MultiProductIdentifier {
     fn validate_product(&self, product: &str) -> bool {
         for identifier in self.identifiers.iter() {
             if !identifier.validate_product(product) {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn validate_serial(&self, serial: &str) -> bool {
+        for identifier in self.identifiers.iter() {
+            if !identifier.validate_serial(serial) {
                 return false;
             }
         }

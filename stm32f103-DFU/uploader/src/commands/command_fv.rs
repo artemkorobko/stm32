@@ -1,4 +1,14 @@
-use crate::driver::driver::Driver;
+use crate::driver::{
+    device::{
+        generic::Identification,
+        identified::IdentifiedDevice,
+        identifier::{
+            DefaultDeviceIdentifier, DefaultProductIdentifier, MultiProductIdentifier,
+            SerialProductIdentifier,
+        },
+    },
+    driver::Driver,
+};
 
 use super::command_executor::CommandExecutor;
 
@@ -20,20 +30,28 @@ impl CommandFv {
     //     let device = device.open()?;
     //     Ok((0, 0, 0))
     // }
+
+    fn find_by_serial(&self, serial: &str) -> anyhow::Result<Option<IdentifiedDevice>> {
+        let i_device = DefaultDeviceIdentifier;
+        let mut i_product = MultiProductIdentifier::with_capacity(2);
+        i_product.add(Box::new(DefaultProductIdentifier));
+        i_product.add(Box::new(SerialProductIdentifier::from(serial)));
+        for device in self.driver.devices()?.iter() {
+            if let Identification::Identified(device) = device.identify(&i_device, &i_product)? {
+                return Ok(Some(device));
+            }
+        }
+        Ok(None)
+    }
 }
 
 impl CommandExecutor for CommandFv {
     fn exec(&self) -> anyhow::Result<()> {
-        // let device = self
-        //     .driver
-        //     .open_device(&DefaultDeviceDetector::boxed(), &self.serial)?;
-        // match device {
-        //     Some(device) => {
-        //         let (major, minor, patch) = self.read_firmware_version(device)?;
-        //         log::info!("Firmware version: {}.{}.{}", major, minor, patch);
-        //     }
-        //     None => log::error!("No device found matching serial {}", self.serial),
-        // }
+        if let Some(device) = self.find_by_serial(&self.serial)? {
+            log::info!("Found USB device with serial {}", self.serial);
+        } else {
+            log::error!("Can't find USB device with serial {}", self.serial);
+        }
         Ok(())
     }
 }

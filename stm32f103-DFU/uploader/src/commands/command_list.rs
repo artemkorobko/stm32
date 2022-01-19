@@ -1,7 +1,7 @@
 use crate::driver::{
     device::{
         generic::Identification,
-        identifier::{DefaultDeviceIdentifier, DefaultProductIdentifier, MultiProductIdentifier},
+        identifier::{DefaultDeviceIdentifier, DefaultProductIdentifier},
     },
     driver::Driver,
 };
@@ -25,13 +25,17 @@ impl CommandList {
 impl CommandExecutor for CommandList {
     fn exec(&self) -> anyhow::Result<()> {
         let i_device = DefaultDeviceIdentifier {};
-        let i_product = MultiProductIdentifier::new(); //from(Box::new(DefaultProductIdentifier {}));
+        let i_product = DefaultProductIdentifier {};
         let mut devices = 1;
         for device in self.driver.devices()?.iter() {
             if let Identification::Identified(device) = device.identify(&i_device, &i_product)? {
                 log::info!("----------------- Device {}", devices);
                 log::info!("Vendor / ID:\t{} / {}", device.vendor(), device.vendor_id());
-                log::info!("Product / ID:\t{} / {}", device.product(), device.product_id());
+                log::info!(
+                    "Product / ID:\t{} / {}",
+                    device.product(),
+                    device.product_id()
+                );
                 log::info!("Serial:\t\t{}", device.serial_number());
                 devices += 1;
             }

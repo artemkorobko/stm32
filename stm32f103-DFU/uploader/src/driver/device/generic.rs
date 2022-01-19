@@ -34,12 +34,11 @@ impl GenericDevice {
             let language = Self::detect_language(&handle, i_product.timeout())?;
             let vendor = Self::read_vendor(&handle, language, &descriptor, i_product.timeout())?;
             let product = Self::read_product(&handle, language, &descriptor, i_product.timeout())?;
-            if Self::is_product_supported(&vendor, &product, i_product) {
-                let serial =
-                    Self::read_serial_number(&handle, language, &descriptor, i_product.timeout())?;
-                let device =
-                    IdentifiedDevice::new(self.inner, descriptor, handle, vendor, product, serial);
-                Ok(Identification::Identified(device))
+            let serial = Self::read_serial(&handle, language, &descriptor, i_product.timeout())?;
+            if Self::is_product_supported(&vendor, &product, &serial, i_product) {
+                Ok(Identification::Identified(IdentifiedDevice::new(
+                    self.inner, descriptor, handle, vendor, product, serial,
+                )))
             } else {
                 Ok(Identification::Unknown(self))
             }
@@ -60,9 +59,12 @@ impl GenericDevice {
     fn is_product_supported(
         vendor: &str,
         product: &str,
+        serial: &str,
         identifier: &impl ProductIdentifier,
     ) -> bool {
-        identifier.validate_vendor(vendor) && identifier.validate_product(product)
+        identifier.validate_vendor(vendor)
+            && identifier.validate_product(product)
+            && identifier.validate_serial(serial)
     }
 
     fn read_descriptor(
@@ -93,26 +95,22 @@ impl GenericDevice {
         handle: &rusb::DeviceHandle<rusb::Context>,
         timeout: time::Duration,
     ) -> anyhow::Result<rusb::Language> {
-        handle
-            .read_languages(timeout)
-            .with_context(|| {
-                let device = handle.device();
-                format!(
-                    "Can't read USB device languages on bus {} and address {}",
-                    device.bus_number(),
-                    device.address(),
-                )
-            })?
-            .first()
-            .cloned()
-            .ok_or_else(|| {
-                let device = handle.device();
-                anyhow::anyhow!(
-                    "USB device on bus {} and address {} does not have any language",
-                    device.bus_number(),
-                    device.address(),
-                )
-            })
+        let languages = handle.read_languages(timeout).with_context(|| {
+            let device = handle.device();
+            format!(
+                "Can't read USB device languages on bus {} and address {}",
+                device.bus_number(),
+                device.address(),
+            )
+        })?;
+        languages.first().cloned().ok_or_else(|| {
+            let device = handle.device();
+            anyhow::anyhow!(
+                "USB device on bus {} and address {} does not have any language",
+                device.bus_number(),
+                device.address(),
+            )
+        })
     }
 
     fn read_vendor(
@@ -151,7 +149,7 @@ impl GenericDevice {
             })
     }
 
-    pub fn read_serial_number(
+    pub fn read_serial(
         handle: &rusb::DeviceHandle<rusb::Context>,
         language: rusb::Language,
         descriptor: &rusb::DeviceDescriptor,
