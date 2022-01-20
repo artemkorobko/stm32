@@ -1,6 +1,6 @@
-use crate::driver::{prelude::*, protocol::common::CommonProtocol};
+use crate::driver::prelude::*;
 
-use super::command_executor::CommandExecutor;
+use super::{command_executor::CommandExecutor, command_helper};
 
 pub struct CommandDeviceId {
     driver: Driver,
@@ -15,24 +15,11 @@ impl CommandDeviceId {
     pub fn boxed(self) -> Box<dyn CommandExecutor> {
         Box::new(self)
     }
-
-    fn find_by_serial(&self, serial: &str) -> anyhow::Result<Option<IdentifiedDevice>> {
-        let i_device = DefaultDeviceIdentifier;
-        let mut i_product = CompositeProductIdentifier::with_capacity(2);
-        i_product.add(Box::new(DefaultProductIdentifier));
-        i_product.add(Box::new(SerialProductIdentifier::from(serial)));
-        for device in self.driver.devices()?.iter() {
-            if let Identification::Identified(device) = device.identify(&i_device, &i_product)? {
-                return Ok(Some(device));
-            }
-        }
-        Ok(None)
-    }
 }
 
 impl CommandExecutor for CommandDeviceId {
     fn exec(&self) -> anyhow::Result<()> {
-        if let Some(device) = self.find_by_serial(&self.serial)? {
+        if let Some(device) = command_helper::find_by_serial(&self.driver, &self.serial)? {
             log::info!("Found USB device with serial {}", self.serial);
             let device_id = device.open()?.device_id()?;
             log::info!(

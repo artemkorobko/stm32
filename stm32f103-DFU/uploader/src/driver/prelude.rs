@@ -8,3 +8,4 @@ pub use super::device::{
     opened::OpenedDevice,
 };
 pub use super::driver::Driver;
+pub use super::protocol::common::{CommonProtocol, DeviceMode};

@@ -13,9 +13,15 @@ pub struct DeviceId {
     pub id_3: u32,
 }
 
+pub enum DeviceMode {
+    Fdu,
+    Device,
+}
+
 pub trait CommonProtocol {
     fn firmware_version(&mut self) -> anyhow::Result<FirmwareVersion>;
     fn device_id(&mut self) -> anyhow::Result<DeviceId>;
+    fn device_mode(&mut self) -> anyhow::Result<DeviceMode>;
 }
 
 impl CommonProtocol for OpenedDevice {
@@ -54,6 +60,21 @@ impl CommonProtocol for OpenedDevice {
                 | ((buf[11] as u32) << 16)
                 | ((buf[12] as u32) << 24),
         })
+    }
+
+    fn device_mode(&mut self) -> anyhow::Result<DeviceMode> {
+        let buf = [2];
+        let size = self.write_all(&buf)?;
+        validate_size_sent(size, 1)?;
+        let mut buf = [0; 64];
+        let size = self.read(&mut buf, DEFAULT_IO_TIMEOUT)?;
+        validate_size_received(size, 2)?;
+        validate_opcode(buf[0], 2)?;
+        if buf[1] == 200 {
+            Ok(DeviceMode::Fdu)
+        } else {
+            Ok(DeviceMode::Device)
+        }
     }
 }
 
