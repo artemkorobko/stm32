@@ -12,6 +12,11 @@ pub enum Command {
         /// Serial number
         serial: String,
     },
+    /// Print device id
+    Id {
+        /// Serial number
+        serial: String,
+    },
     /// Print DFU flags
     Flags,
     /// Upload firmware

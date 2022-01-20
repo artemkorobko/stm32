@@ -1,5 +1,6 @@
 use commands::{
-    command_executor::CommandExecutor, command_flags::CommandFlags, command_fv::CommandFv,
+    command_device_id::CommandDeviceId, command_executor::CommandExecutor,
+    command_firmware_version::CommandFirmwareVersion, command_flags::CommandFlags,
     command_list::CommandList, command_upload::CommandUpload, command_version::CommandVersion,
     config::Command,
 };
@@ -25,7 +26,8 @@ fn create_command_executor(command: Command) -> anyhow::Result<Box<dyn CommandEx
     let executor: Box<dyn CommandExecutor> = match command {
         Command::Version => CommandVersion::boxed(),
         Command::Ls => CommandList::new(Driver::new()?).boxed(),
-        Command::Fv { serial } => CommandFv::new(Driver::new()?, serial).boxed(),
+        Command::Fv { serial } => CommandFirmwareVersion::new(Driver::new()?, serial).boxed(),
+        Command::Id { serial } => CommandDeviceId::new(Driver::new()?, serial).boxed(),
         Command::Flags => CommandFlags::new(Driver::new()?).boxed(),
         Command::Upload { source, target } => {
             CommandUpload::new(Driver::new()?, source, target).boxed()
