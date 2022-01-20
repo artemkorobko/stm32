@@ -91,19 +91,9 @@ pub struct CompositeProductIdentifier {
 }
 
 impl CompositeProductIdentifier {
-    pub fn new() -> Self {
-        Self::with_capacity(1)
-    }
-
     pub fn with_capacity(capacity: usize) -> Self {
         let identifiers = Vec::with_capacity(capacity);
         Self { identifiers }
-    }
-
-    pub fn from(identifier: Box<dyn ProductIdentifier>) -> Self {
-        let mut instance = Self::new();
-        instance.add(identifier);
-        instance
     }
 
     pub fn add(&mut self, identifier: Box<dyn ProductIdentifier>) {

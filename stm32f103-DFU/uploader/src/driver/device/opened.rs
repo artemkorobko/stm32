@@ -48,25 +48,24 @@ impl OpenedDevice {
         self.read_ep.read(&self.handle, buf, timeout)
     }
 
-    pub fn read_all(&mut self, buf: &mut [u8]) -> anyhow::Result<usize> {
-        self.try_read_all(buf, time::Duration::MAX, usize::MAX)
-    }
+    // pub fn read_all(&mut self, buf: &mut [u8]) -> anyhow::Result<usize> {
+    //     self.try_read_all(buf, time::Duration::MAX, usize::MAX)
+    // }
 
-    pub fn try_read_all(
-        &mut self,
-        buf: &mut [u8],
-        timeout: time::Duration,
-        mut retries: usize,
-    ) -> anyhow::Result<usize> {
-        let bytes_total = buf.len();
-        let mut bytes_read = self.read(buf, timeout)?;
-        while bytes_read < bytes_total && retries > 0 {
-            println!("123");
-            bytes_read += self.read(&mut buf[bytes_read..], timeout)?;
-            retries -= 1;
-        }
-        Ok(bytes_read)
-    }
+    // pub fn try_read_all(
+    //     &mut self,
+    //     buf: &mut [u8],
+    //     timeout: time::Duration,
+    //     mut retries: usize,
+    // ) -> anyhow::Result<usize> {
+    //     let bytes_total = buf.len();
+    //     let mut bytes_read = self.read(buf, timeout)?;
+    //     while bytes_read < bytes_total && retries > 0 {
+    //         bytes_read += self.read(&mut buf[bytes_read..], timeout)?;
+    //         retries -= 1;
+    //     }
+    //     Ok(bytes_read)
+    // }
 }
 
 impl Drop for OpenedDevice {

@@ -7,25 +7,25 @@ pub enum Command {
     Version,
     /// List connected devices
     Ls,
-    /// Print firmware version
-    Fv {
+    /// Read firmware version
+    Rv {
         /// Serial number
         serial: String,
     },
-    /// Print device id
-    Id {
+    /// Read device id
+    Rd {
         /// Serial number
         serial: String,
     },
-    /// Print device mode
-    Mode {
+    /// Read device mode
+    Rm {
         /// Serial number
         serial: String,
     },
-    /// Print DFU flags
-    Flags,
+    /// Read DFU flags
+    Rf,
     /// Upload firmware
-    Upload {
+    Uf {
         /// Firmware to upload path
         #[structopt(short, long)]
         source: String,
