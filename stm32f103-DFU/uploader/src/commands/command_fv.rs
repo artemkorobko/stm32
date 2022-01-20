@@ -1,4 +1,4 @@
-use crate::driver::prelude::*;
+use crate::driver::{prelude::*, protocol::common::CommonProtocol};
 
 use super::command_executor::CommandExecutor;
 
@@ -15,11 +15,6 @@ impl CommandFv {
     pub fn boxed(self) -> Box<dyn CommandExecutor> {
         Box::new(self)
     }
-
-    // fn read_firmware_version(&self, device: Device) -> anyhow::Result<(u8, u8, u8)> {
-    //     let device = device.open()?;
-    //     Ok((0, 0, 0))
-    // }
 
     fn find_by_serial(&self, serial: &str) -> anyhow::Result<Option<IdentifiedDevice>> {
         let i_device = DefaultDeviceIdentifier;
@@ -38,8 +33,14 @@ impl CommandFv {
 impl CommandExecutor for CommandFv {
     fn exec(&self) -> anyhow::Result<()> {
         if let Some(device) = self.find_by_serial(&self.serial)? {
-            let device = device.open()?;
             log::info!("Found USB device with serial {}", self.serial);
+            let version = device.open()?.firmware_version()?;
+            log::info!(
+                "USB device firmware version {}.{}.{}",
+                version.major,
+                version.minor,
+                version.patch
+            );
         } else {
             log::error!("Can't find USB device with serial {}", self.serial);
         }

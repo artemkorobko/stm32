@@ -1,7 +1,5 @@
 use core::time;
 
-const DEFAULT_IO_TIMEOUT: time::Duration = time::Duration::from_secs(1);
-
 pub trait DeviceIdentifier {
     fn validate_vid(&self, vid: u16) -> bool;
     fn validate_pid(&self, pid: u16) -> bool;
@@ -64,7 +62,7 @@ impl ProductIdentifier for SerialProductIdentifier {
     }
 
     fn timeout(&self) -> time::Duration {
-        DEFAULT_IO_TIMEOUT
+        super::DEFAULT_IO_TIMEOUT
     }
 }
 
@@ -84,7 +82,7 @@ impl ProductIdentifier for DefaultProductIdentifier {
     }
 
     fn timeout(&self) -> time::Duration {
-        DEFAULT_IO_TIMEOUT
+        super::DEFAULT_IO_TIMEOUT
     }
 }
 
