@@ -1,6 +1,6 @@
 use crate::driver::prelude::*;
 
-use super::command_executor::CommandExecutor;
+use super::executor::CommandExecutor;
 
 pub struct CommandVersion;
 

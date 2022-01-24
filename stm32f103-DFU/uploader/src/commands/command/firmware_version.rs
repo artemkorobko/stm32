@@ -1,6 +1,6 @@
-use crate::driver::prelude::*;
+use crate::{commands::helper, driver::prelude::*};
 
-use super::{command_executor::CommandExecutor, command_helper};
+use super::executor::CommandExecutor;
 
 pub struct CommandFirmwareVersion {
     driver: Driver,
@@ -19,7 +19,7 @@ impl CommandFirmwareVersion {
 
 impl CommandExecutor for CommandFirmwareVersion {
     fn exec(&self) -> anyhow::Result<()> {
-        if let Some(device) = command_helper::find_by_serial(&self.driver, &self.serial)? {
+        if let Some(device) = helper::find_by_serial(&self.driver, &self.serial)? {
             log::info!("Found USB device with serial {}", self.serial);
             let version = device.open()?.firmware_version()?;
             log::info!(

@@ -1,9 +1,9 @@
-use commands::{
-    command_device_id::CommandDeviceId, command_device_mode::CommandDeviceMode,
-    command_executor::CommandExecutor, command_firmware_version::CommandFirmwareVersion,
-    command_list::CommandList, command_read_flags::CommandReadFlags, command_upload::CommandUpload,
-    command_version::CommandVersion, config::Command,
+use commands::command::{
+    firmware_version::CommandFirmwareVersion, list::CommandList,
+    device_id::CommandDeviceId, device_mode::CommandDeviceMode, executor::CommandExecutor,
+    read_flags::CommandReadFlags, upload::CommandUpload, version::CommandVersion,
 };
+use commands::config::Command;
 use structopt::StructOpt;
 
 use crate::driver::driver::Driver;

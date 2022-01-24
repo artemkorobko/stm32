@@ -1,6 +1,6 @@
-use crate::driver::prelude::*;
+use crate::{commands::helper, driver::prelude::*};
 
-use super::{command_executor::CommandExecutor, command_helper};
+use super::executor::CommandExecutor;
 
 pub struct CommandDeviceMode {
     driver: Driver,
@@ -19,7 +19,7 @@ impl CommandDeviceMode {
 
 impl CommandExecutor for CommandDeviceMode {
     fn exec(&self) -> anyhow::Result<()> {
-        if let Some(device) = command_helper::find_by_serial(&self.driver, &self.serial)? {
+        if let Some(device) = helper::find_by_serial(&self.driver, &self.serial)? {
             log::info!("Found USB device with serial {}", self.serial);
             let device_mode = device.open()?.device_mode()?;
             match device_mode {
