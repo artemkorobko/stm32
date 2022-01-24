@@ -12,8 +12,13 @@ impl CommandVersion {
 
 impl CommandExecutor for CommandVersion {
     fn exec(&self) -> anyhow::Result<()> {
-        let ver = Driver::version();
-        log::info!("Driver version: {}.{}.{}", ver.major, ver.minor, ver.patch);
+        let version = Driver::version();
+        log::info!(
+            "Driver version: {}.{}.{}",
+            version.major,
+            version.minor,
+            version.patch
+        );
         Ok(())
     }
 }

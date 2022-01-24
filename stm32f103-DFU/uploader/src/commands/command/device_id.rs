@@ -19,19 +19,14 @@ impl CommandDeviceId {
 
 impl CommandExecutor for CommandDeviceId {
     fn exec(&self) -> anyhow::Result<()> {
-        if let Some(device) = helper::find_by_serial(&self.driver, &self.serial)? {
-            log::info!("Found USB device with serial {}", self.serial);
-            let device_id = device.open()?.device_id()?;
-            log::info!(
-                "USB device id {}-{}-{}-{}",
-                device_id.id_0,
-                device_id.id_1,
-                device_id.id_2,
-                device_id.id_3,
-            );
-        } else {
-            log::error!("Can't find USB device with serial {}", self.serial);
-        }
+        let device_id = helper::open_by_serial(&self.driver, &self.serial)?.device_id()?;
+        log::info!(
+            "USB device id {}-{}-{}-{}",
+            device_id.id_0,
+            device_id.id_1,
+            device_id.id_2,
+            device_id.id_3,
+        );
         Ok(())
     }
 }

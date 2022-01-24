@@ -29,7 +29,7 @@ fn create_command_executor(command: Command) -> anyhow::Result<Box<dyn CommandEx
         Command::Rv { serial } => CommandFirmwareVersion::new(Driver::new()?, serial).boxed(),
         Command::Rd { serial } => CommandDeviceId::new(Driver::new()?, serial).boxed(),
         Command::Rm { serial } => CommandDeviceMode::new(Driver::new()?, serial).boxed(),
-        Command::Rf => CommandReadFlags::new(Driver::new()?).boxed(),
+        Command::Rf { serial } => CommandReadFlags::new(Driver::new()?, serial).boxed(),
         Command::Uf { source, target } => {
             CommandUpload::new(Driver::new()?, source, target).boxed()
         }

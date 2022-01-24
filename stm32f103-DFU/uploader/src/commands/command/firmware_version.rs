@@ -19,18 +19,13 @@ impl CommandFirmwareVersion {
 
 impl CommandExecutor for CommandFirmwareVersion {
     fn exec(&self) -> anyhow::Result<()> {
-        if let Some(device) = helper::find_by_serial(&self.driver, &self.serial)? {
-            log::info!("Found USB device with serial {}", self.serial);
-            let version = device.open()?.firmware_version()?;
-            log::info!(
-                "USB device firmware version {}.{}.{}",
-                version.major,
-                version.minor,
-                version.patch
-            );
-        } else {
-            log::error!("Can't find USB device with serial {}", self.serial);
-        }
+        let version = helper::open_by_serial(&self.driver, &self.serial)?.firmware_version()?;
+        log::info!(
+            "USB device firmware version {}.{}.{}",
+            version.major,
+            version.minor,
+            version.patch
+        );
         Ok(())
     }
 }

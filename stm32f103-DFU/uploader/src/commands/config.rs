@@ -23,7 +23,10 @@ pub enum Command {
         serial: String,
     },
     /// Read DFU flags
-    Rf,
+    Rf {
+        /// Serial number
+        serial: String,
+    },
     /// Upload firmware
     Uf {
         /// Firmware to upload path
