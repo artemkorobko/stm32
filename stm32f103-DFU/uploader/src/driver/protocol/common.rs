@@ -26,13 +26,14 @@ pub trait CommonProtocol {
 
 impl CommonProtocol for OpenedDevice {
     fn firmware_version(&mut self) -> anyhow::Result<FirmwareVersion> {
-        let buf = [0];
+        let opcode = 0;
+        let buf = [opcode];
         let size = self.write_all(&buf)?;
         validate_size_sent(size, 1)?;
         let mut buf = [0; 64];
         let size = self.read(&mut buf, DEFAULT_IO_TIMEOUT)?;
+        validate_opcode(buf[0], opcode)?;
         validate_size_received(size, 4)?;
-        validate_opcode(buf[0], 0)?;
         Ok(FirmwareVersion {
             major: buf[1],
             minor: buf[2],
@@ -41,13 +42,14 @@ impl CommonProtocol for OpenedDevice {
     }
 
     fn device_id(&mut self) -> anyhow::Result<DeviceId> {
-        let buf = [1];
+        let opcode = 1;
+        let buf = [opcode];
         let size = self.write_all(&buf)?;
         validate_size_sent(size, 1)?;
         let mut buf = [0; 64];
         let size = self.read(&mut buf, DEFAULT_IO_TIMEOUT)?;
+        validate_opcode(buf[0], opcode)?;
         validate_size_received(size, 13)?;
-        validate_opcode(buf[0], 1)?;
         Ok(DeviceId {
             id_0: buf[1] as u16 | ((buf[2] as u16) << 8),
             id_1: buf[3] as u16 | ((buf[4] as u16) << 8),
@@ -63,13 +65,14 @@ impl CommonProtocol for OpenedDevice {
     }
 
     fn device_mode(&mut self) -> anyhow::Result<DeviceMode> {
-        let buf = [2];
+        let opcode = 0;
+        let buf = [opcode];
         let size = self.write_all(&buf)?;
         validate_size_sent(size, 1)?;
         let mut buf = [0; 64];
         let size = self.read(&mut buf, DEFAULT_IO_TIMEOUT)?;
+        validate_opcode(buf[0], opcode)?;
         validate_size_received(size, 2)?;
-        validate_opcode(buf[0], 2)?;
         if buf[1] == 200 {
             Ok(DeviceMode::Fdu)
         } else {

@@ -1,11 +1,15 @@
+use stm32f1xx_hal::flash;
 use usb_device::UsbError;
 
 use crate::{dfu, drivers::cdc_acm::Device};
+
+use super::octet::{OctetHi, OctetLo};
 
 pub enum Inbound {
     Version,
     DeviceId,
     Mode,
+    MemoryLayout,
     ReadDfuFlags,
     ResetDfuFlags,
     Unknown,
@@ -24,8 +28,9 @@ impl Reader for Device {
             0 => Inbound::Version,
             1 => Inbound::DeviceId,
             2 => Inbound::Mode,
-            3 => Inbound::ReadDfuFlags,
-            4 => Inbound::ResetDfuFlags,
+            3 => Inbound::MemoryLayout,
+            4 => Inbound::ReadDfuFlags,
+            5 => Inbound::ResetDfuFlags,
             _ => Inbound::Unknown,
         };
         Ok(inbound)
@@ -45,10 +50,11 @@ pub enum Outbound {
     Version(u8, u8, u8),
     DeviceId(u16, u16, u32, u32),
     ModeDfu,
+    MemoryLayout(u32, u32, u32),
     DfuFlags(&'static dfu::Flags),
-    DfuFlagsError,
+    DfuFlagsError(flash::Error),
     ResetDfuFlagsOk,
-    ResetDfuFlagsErr,
+    ResetDfuFlagsErr(flash::Error),
 }
 
 pub trait Writer {
@@ -65,18 +71,18 @@ impl Writer for Device {
             Outbound::DeviceId(id_0, id_1, id_2, id_3) => {
                 let buf = [
                     1,
-                    id_0 as u8,
-                    (id_0 >> 8) as u8,
-                    id_1 as u8,
-                    (id_1 >> 8) as u8,
-                    id_2 as u8,
-                    (id_2 >> 8) as u8,
-                    (id_2 >> 16) as u8,
-                    (id_2 >> 24) as u8,
-                    id_3 as u8,
-                    (id_3 >> 8) as u8,
-                    (id_3 >> 16) as u8,
-                    (id_3 >> 24) as u8,
+                    id_0.octet_1(),
+                    id_0.octet_2(),
+                    id_1.octet_1(),
+                    id_1.octet_2(),
+                    id_2.octet_1(),
+                    id_2.octet_2(),
+                    id_2.octet_3(),
+                    id_2.octet_4(),
+                    id_3.octet_1(),
+                    id_3.octet_2(),
+                    id_3.octet_3(),
+                    id_3.octet_4(),
                 ];
                 self.write_all(&buf)
             }
@@ -84,29 +90,56 @@ impl Writer for Device {
                 let buf = [2, 200];
                 self.write_all(&buf)
             }
-            Outbound::DfuFlags(flags) => {
+            Outbound::MemoryLayout(flash_start, flash_end, flash_size) => {
                 let buf = [
                     3,
-                    0,
-                    flags.flash_count as u8,
-                    (flags.flash_count >> 8) as u8,
-                    (flags.flash_count >> 16) as u8,
-                    (flags.flash_count >> 24) as u8,
+                    flash_start.octet_1(),
+                    flash_start.octet_2(),
+                    flash_start.octet_3(),
+                    flash_start.octet_4(),
+                    flash_end.octet_1(),
+                    flash_end.octet_2(),
+                    flash_end.octet_3(),
+                    flash_end.octet_4(),
+                    flash_size.octet_1(),
+                    flash_size.octet_2(),
+                    flash_size.octet_3(),
+                    flash_size.octet_4(),
                 ];
                 self.write_all(&buf)
             }
-            Outbound::DfuFlagsError => {
-                let buf = [3, 1];
+            Outbound::DfuFlags(flags) => {
+                let flashed = if flags.flashed { 1 } else { 0 };
+                let buf = [4, 0, flags.writes, flashed];
+                self.write_all(&buf)
+            }
+            Outbound::DfuFlagsError(error) => {
+                let buf = [4, flash_error_code(error)];
                 self.write_all(&buf)
             }
             Outbound::ResetDfuFlagsOk => {
-                let buf = [4, 0];
+                let buf = [5, 0];
                 self.write_all(&buf)
             }
-            Outbound::ResetDfuFlagsErr => {
-                let buf = [4, 1];
+            Outbound::ResetDfuFlagsErr(error) => {
+                let buf = [5, flash_error_code(error)];
                 self.write_all(&buf)
             }
         }
+    }
+}
+
+fn flash_error_code(error: flash::Error) -> u8 {
+    match error {
+        flash::Error::AddressLargerThanFlash => 1,
+        flash::Error::AddressMisaligned => 2,
+        flash::Error::LengthNotMultiple2 => 3,
+        flash::Error::LengthTooLong => 4,
+        flash::Error::EraseError => 5,
+        flash::Error::ProgrammingError => 6,
+        flash::Error::WriteError => 7,
+        flash::Error::VerifyError => 8,
+        flash::Error::UnlockError => 9,
+        flash::Error::LockError => 10,
     }
 }

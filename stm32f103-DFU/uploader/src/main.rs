@@ -1,7 +1,9 @@
+use commands::command::memory_layout::CommandMemoryLayout;
+use commands::command::reset_flags::CommandResetFlags;
 use commands::command::{
-    firmware_version::CommandFirmwareVersion, list::CommandList,
     device_id::CommandDeviceId, device_mode::CommandDeviceMode, executor::CommandExecutor,
-    read_flags::CommandReadFlags, upload::CommandUpload, version::CommandVersion,
+    firmware_version::CommandFirmwareVersion, list::CommandList, read_flags::CommandReadFlags,
+    upload::CommandUpload, version::CommandVersion,
 };
 use commands::config::Command;
 use structopt::StructOpt;
@@ -28,8 +30,10 @@ fn create_command_executor(command: Command) -> anyhow::Result<Box<dyn CommandEx
         Command::Ls => CommandList::new(Driver::new()?).boxed(),
         Command::Rv { serial } => CommandFirmwareVersion::new(Driver::new()?, serial).boxed(),
         Command::Rd { serial } => CommandDeviceId::new(Driver::new()?, serial).boxed(),
+        Command::Rml { serial } => CommandMemoryLayout::new(Driver::new()?, serial).boxed(),
         Command::Rm { serial } => CommandDeviceMode::new(Driver::new()?, serial).boxed(),
         Command::Rf { serial } => CommandReadFlags::new(Driver::new()?, serial).boxed(),
+        Command::Rdf { serial } => CommandResetFlags::new(Driver::new()?, serial).boxed(),
         Command::Uf { source, target } => {
             CommandUpload::new(Driver::new()?, source, target).boxed()
         }

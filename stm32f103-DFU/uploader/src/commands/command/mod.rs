@@ -3,6 +3,8 @@ pub mod device_mode;
 pub mod executor;
 pub mod firmware_version;
 pub mod list;
+pub mod memory_layout;
 pub mod read_flags;
+pub mod reset_flags;
 pub mod upload;
 pub mod version;

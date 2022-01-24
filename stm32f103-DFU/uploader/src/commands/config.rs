@@ -22,8 +22,18 @@ pub enum Command {
         /// Serial number
         serial: String,
     },
+    /// Read device memory layout
+    Rml {
+        /// Serial number
+        serial: String,
+    },
     /// Read DFU flags
     Rf {
+        /// Serial number
+        serial: String,
+    },
+    /// Reset DFU flags
+    Rdf {
         /// Serial number
         serial: String,
     },

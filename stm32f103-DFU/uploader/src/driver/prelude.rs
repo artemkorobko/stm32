@@ -9,3 +9,4 @@ pub use super::device::{
 };
 pub use super::driver::Driver;
 pub use super::protocol::common::{CommonProtocol, DeviceMode};
+pub use super::protocol::dfu::DfuProtocol;

@@ -1,7 +1,4 @@
-use crate::{
-    commands::helper,
-    driver::{prelude::*, protocol::dfu::DfuProtocol},
-};
+use crate::{commands::helper, driver::prelude::*};
 
 use super::executor::CommandExecutor;
 
@@ -25,9 +22,10 @@ impl CommandExecutor for CommandReadFlags {
         let flags = helper::open_by_serial(&self.driver, &self.serial)?.dfu_read_flags()?;
         match flags {
             Some(flags) => {
-                log::info!("Flash count {}", flags.flash_count);
+                log::info!("Writes count: {}", flags.writes);
+                log::info!("Flashing completed: {}", flags.flashed);
             }
-            None => log::info!("USB device has no flags set"),
+            None => log::error!("USB device has no flags set"),
         }
         Ok(())
     }

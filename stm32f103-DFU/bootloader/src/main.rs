@@ -105,11 +105,19 @@ const APP: () = {
                     device.write_outbound(outbound).ok();
                 });
             }
+            Inbound::MemoryLayout => {
+                let flash_size = FLASH_SIZE as u32 * flash::SZ_1K as u32;
+                let outbound =
+                    Outbound::MemoryLayout(flash::FLASH_START, flash::FLASH_END, flash_size);
+                usb.lock(|device| {
+                    device.write_outbound(outbound).ok();
+                });
+            }
             Inbound::ReadDfuFlags => {
                 let mut writer = flash.writer(flash::SectorSize::Sz1K, FLASH_SIZE);
                 let outbound = match dfu::Flags::read(&mut writer) {
                     Ok(flags) => Outbound::DfuFlags(flags),
-                    Err(_) => Outbound::DfuFlagsError,
+                    Err(error) => Outbound::DfuFlagsError(error),
                 };
                 usb.lock(|device| {
                     device.write_outbound(outbound).ok();
@@ -117,11 +125,10 @@ const APP: () = {
             }
             Inbound::ResetDfuFlags => {
                 let mut writer = flash.writer(flash::SectorSize::Sz1K, FLASH_SIZE);
-                let outbound = dfu::Flags::new()
-                    .write(&mut writer)
-                    .map(|_| Outbound::ResetDfuFlagsOk)
-                    .unwrap_or(Outbound::ResetDfuFlagsErr);
-
+                let outbound = match dfu::Flags::new().write(&mut writer) {
+                    Ok(_) => Outbound::ResetDfuFlagsOk,
+                    Err(error) => Outbound::ResetDfuFlagsErr(error),
+                };
                 usb.lock(|device| {
                     device.write_outbound(outbound).ok();
                 });

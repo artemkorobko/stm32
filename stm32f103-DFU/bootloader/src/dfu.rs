@@ -8,7 +8,8 @@ const DFU_FLAGS_OFFSET: u32 = FLASH_SIZE - DFU_FLAGS_RESERVED_SIZE;
 #[derive(Default)]
 pub struct Flags {
     pub magic: u32,
-    pub flash_count: u32,
+    pub writes: u8,
+    pub flashed: bool,
 }
 
 impl Flags {
@@ -23,11 +24,11 @@ impl Flags {
         let len = core::mem::size_of::<Self>();
         let data = writer.read(DFU_FLAGS_OFFSET, len)?;
         let flags = Self::from_slice(data);
-        if flags.magic == DFU_FLAGS_MAGIC_NUMBER {
+        // if flags.magic == DFU_FLAGS_MAGIC_NUMBER {
             Ok(flags)
-        } else {
-            Err(flash::Error::VerifyError)
-        }
+        // } else {
+            // Err(flash::Error::VerifyError)
+        // }
     }
 
     pub fn write(&self, writer: &mut flash::FlashWriter) -> flash::Result<()> {
