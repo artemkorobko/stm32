@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 panic-halt = "0.2.0"
 cortex-m = "0.7.3"
-cortex-m-rtic = { version = "0.5.9", default-features = false, features = ["cortex-m-7"] }
-stm32f1xx-hal = { version = "0.7.0", features = ["rt", "stm32f103", "stm32-usbd", "medium"] }
+cortex-m-rtic = "1.0.0"
+stm32f1xx-hal = { version = "0.8.0", features = ["rt", "stm32f103", "stm32-usbd", "medium"] }
 
 [[bin]]
 name = "stm32f103"
