@@ -115,6 +115,7 @@ const APP: () = {
             }
             Inbound::ReadDfuFlags => {
                 let mut writer = flash.writer(flash::SectorSize::Sz1K, FLASH_SIZE);
+                writer.change_verification(false);
                 let outbound = match dfu::Flags::read(&mut writer) {
                     Ok(flags) => Outbound::DfuFlags(flags),
                     Err(error) => Outbound::DfuFlagsError(error),

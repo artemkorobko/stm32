@@ -2,25 +2,27 @@
 #![no_std]
 
 use panic_halt as _;
-use stm32f1xx_hal::{gpio, prelude::*, usb};
-
-use crate::{
-    drivers::cdc_acm,
-    protocols::usb_device::{Inbound, Outbound, Reader, Writer},
-};
 
 mod device_id;
 mod drivers;
-mod protocols;
+mod tasks;
 
-#[rtic::app(device = stm32f1xx_hal::pac, peripherals = true, monotonic = rtic::cyccnt::CYCCNT)]
-const APP: () = {
-    struct Resources {
+#[rtic::app(device = stm32f1xx_hal::pac, peripherals = true, dispatchers = [TAMPER])]
+mod app {
+    use stm32f1xx_hal::{gpio, prelude::*, usb};
+
+    use crate::{device_id, drivers::cdc_acm};
+
+    #[shared]
+    struct Shared {
         usb: cdc_acm::Device,
     }
 
+    #[local]
+    struct Local {}
+
     #[init]
-    fn init(cx: init::Context) -> init::LateResources {
+    fn init(cx: init::Context) -> (Shared, Local, init::Monotonics) {
         // Setup MCU
         let mut cp = cx.core;
         cp.DWT.enable_cycle_counter();
@@ -28,8 +30,8 @@ const APP: () = {
         // Configure peripherals
         let pac = cx.device;
         let mut flash = pac.FLASH.constrain();
-        let mut rcc = pac.RCC.constrain();
-        let mut afio = pac.AFIO.constrain(&mut rcc.apb2);
+        let mut afio = pac.AFIO.constrain();
+        let rcc = pac.RCC.constrain();
         let clocks = rcc
             .cfgr
             .use_hse(8.mhz())
@@ -40,14 +42,14 @@ const APP: () = {
         assert!(clocks.usbclk_valid());
 
         // Disable JTAG
-        let mut gpioa = pac.GPIOA.split(&mut rcc.apb2);
-        let gpiob = pac.GPIOB.split(&mut rcc.apb2);
+        let mut gpioa = pac.GPIOA.split();
+        let gpiob = pac.GPIOB.split();
         let (_pa15, _pb3, _pb4) = afio.mapr.disable_jtag(gpioa.pa15, gpiob.pb3, gpiob.pb4);
 
         // Configure USB
         let usb_dp = gpioa
             .pa12
-            .into_push_pull_output_with_state(&mut gpioa.crh, gpio::State::Low);
+            .into_push_pull_output_with_state(&mut gpioa.crh, gpio::PinState::Low);
         let cpu_cycles_hz = clocks.sysclk().0;
         cortex_m::asm::delay(cpu_cycles_hz / 100);
         let usb_peripheral = usb::Peripheral {
@@ -64,7 +66,7 @@ const APP: () = {
         };
         let usb = cdc_acm::Device::new(usb_peripheral, usb_descriptor);
 
-        init::LateResources { usb }
+        (Shared { usb }, Local {}, init::Monotonics())
     }
 
     #[idle]
@@ -74,45 +76,16 @@ const APP: () = {
         }
     }
 
-    #[task(resources = [usb])]
-    fn handle_usb_inbound(cx: handle_usb_inbound::Context, inbound: Inbound) {
-        let mut usb = cx.resources.usb;
-        match inbound {
-            Inbound::Version => {
-                let major = env!("CARGO_PKG_VERSION_MAJOR").parse::<u8>().unwrap_or(0);
-                let minor = env!("CARGO_PKG_VERSION_MINOR").parse::<u8>().unwrap_or(0);
-                let patch = env!("CARGO_PKG_VERSION_PATCH").parse::<u8>().unwrap_or(0);
-                let outbound = Outbound::Version(major, minor, patch);
-                usb.lock(|device| {
-                    device.write_outbound(outbound).ok();
-                });
-            }
-            Inbound::DeviceId => {
-                let (id_0, id_1, id_2, id_3) = device_id::read();
-                let outbound = Outbound::DeviceId(id_0, id_1, id_2, id_3);
-                usb.lock(|device| {
-                    device.write_outbound(outbound).ok();
-                });
-            }
-            Inbound::Unknown => {}
-        }
-    }
+    use crate::tasks::*;
 
-    #[task(priority = 2, binds = USB_HP_CAN_TX, resources = [usb])]
-    fn usb_tx(cx: usb_tx::Context) {
-        cx.resources.usb.poll();
+    extern "Rust" {
+        #[task(binds = USB_HP_CAN_TX, shared = [usb])]
+        fn usb_tx(cx: usb_tx::Context);
+        #[task(binds = USB_LP_CAN_RX0, shared = [usb])]
+        fn usb_rx(cx: usb_rx::Context);
+        #[task]
+        fn usb_inbound(_: usb_inbound::Context, inbound: Inbound);
+        #[task(shared = [usb])]
+        fn usb_outbound(cx: usb_outbound::Context, outbound: Outbound);
     }
-
-    #[task(priority = 2, binds = USB_LP_CAN_RX0, spawn = [handle_usb_inbound], resources = [usb])]
-    fn usb_rx0(cx: usb_rx0::Context) {
-        let usb = cx.resources.usb;
-        usb.poll_read_inbound(|inbound| {
-            cx.spawn.handle_usb_inbound(inbound).ok();
-        })
-        .ok();
-    }
-
-    extern "C" {
-        fn TAMPER();
-    }
-};
+}
