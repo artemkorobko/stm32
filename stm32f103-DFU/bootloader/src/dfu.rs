@@ -23,7 +23,7 @@ impl Flags {
 
     pub fn read(writer: &mut flash::FlashWriter) -> flash::Result<Option<Self>> {
         let data = writer.read(DFU_FLAGS_OFFSET, FLAGS_SIZE)?;
-        let flags = Self::from_slice(&data);
+        let flags = Self::from_slice(data);
         if flags.magic == DFU_FLAGS_MAGIC_NUMBER {
             Ok(Some(flags))
         } else {
@@ -42,28 +42,31 @@ impl Flags {
         if self.flashed {
             flags |= 1;
         }
-        let data = [
+
+        [
             self.magic as u8,
             (self.magic >> 8) as u8,
             (self.magic >> 16) as u8,
             (self.magic >> 24) as u8,
             self.writes,
             flags,
-        ];
-        data
+        ]
     }
 
     fn from_slice(data: &[u8]) -> Self {
-        let mut result = Self::default();
-        result.magic = data[0] as u32
-            | (data[1] as u32) << 8
-            | (data[2] as u32) << 16
-            | (data[3] as u32) << 24;
-        result.writes = data[4];
         let flags = data[5];
+        let mut flashed = false;
         if flags & 1 == 1 {
-            result.flashed = true;
+            flashed = true;
         }
-        result
+
+        Self {
+            magic: data[0] as u32
+                | (data[1] as u32) << 8
+                | (data[2] as u32) << 16
+                | (data[3] as u32) << 24,
+            writes: data[4],
+            flashed,
+        }
     }
 }
