@@ -65,7 +65,7 @@ impl CommonProtocol for OpenedDevice {
     }
 
     fn device_mode(&mut self) -> anyhow::Result<DeviceMode> {
-        let opcode = 0;
+        let opcode = 2;
         let buf = [opcode];
         let size = self.write_all(&buf)?;
         validate_size_sent(size, 1)?;

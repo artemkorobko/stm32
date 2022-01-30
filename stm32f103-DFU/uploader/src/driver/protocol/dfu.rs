@@ -60,6 +60,8 @@ impl DfuProtocol for OpenedDevice {
                 writes: buf[2],
                 flashed: if buf[3] == 1 { true } else { false },
             }))
+        } else if status == 0xff {
+            anyhow::bail!("USB device DFU flags not present");
         } else {
             common::validate_size_received(size, 2)?;
             anyhow::bail!(
