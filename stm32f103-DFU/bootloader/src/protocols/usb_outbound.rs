@@ -5,53 +5,13 @@ use crate::{dfu, drivers::cdc_acm::Device};
 
 use super::octet::{OctetHi, OctetLo};
 
-pub enum Inbound {
-    Version,
-    DeviceId,
-    Mode,
-    MemoryLayout,
-    ReadDfuFlags,
-    ResetDfuFlags,
-    Unknown,
-}
-
-pub trait Reader {
-    fn read_inbound(&mut self) -> Result<Inbound, UsbError>;
-    fn poll_read_inbound(&mut self, handler: impl FnOnce(Inbound)) -> Result<(), UsbError>;
-}
-
-impl Reader for Device {
-    fn read_inbound(&mut self) -> Result<Inbound, UsbError> {
-        let mut buf = [0u8; 64];
-        self.read(&mut buf)?;
-        let inbound = match buf[0] {
-            0 => Inbound::Version,
-            1 => Inbound::DeviceId,
-            2 => Inbound::Mode,
-            3 => Inbound::MemoryLayout,
-            4 => Inbound::ReadDfuFlags,
-            5 => Inbound::ResetDfuFlags,
-            _ => Inbound::Unknown,
-        };
-        Ok(inbound)
-    }
-
-    fn poll_read_inbound(&mut self, handler: impl FnOnce(Inbound)) -> Result<(), UsbError> {
-        if self.poll() {
-            let inbound = self.read_inbound()?;
-            handler(inbound);
-        }
-
-        Ok(())
-    }
-}
-
 pub enum Outbound {
     Version(u8, u8, u8),
     DeviceId(u16, u16, u32, u32),
     ModeDfu,
     MemoryLayout(u32, u32, u32),
-    DfuFlags(&'static dfu::Flags),
+    DfuFlags(dfu::Flags),
+    DfuFlagsEmpty,
     DfuFlagsError(flash::Error),
     ResetDfuFlagsOk,
     ResetDfuFlagsErr(flash::Error),
@@ -111,6 +71,10 @@ impl Writer for Device {
             Outbound::DfuFlags(flags) => {
                 let flashed = if flags.flashed { 1 } else { 0 };
                 let buf = [4, 0, flags.writes, flashed];
+                self.write_all(&buf)
+            }
+            Outbound::DfuFlagsEmpty => {
+                let buf = [4, 0xff];
                 self.write_all(&buf)
             }
             Outbound::DfuFlagsError(error) => {
